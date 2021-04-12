@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Лента пользователя{% endblock %}
+{% block header %}<h1>Записи избранных авторов</h1>{% endblock %}
+{% block content %}
+{% include 'includes/menu.html' with index=True %}   
+    {% for post in page %}
+    {% include 'includes/post_item.html' with post=post %} 
+    {% endfor %}
+    {% include 'includes/paginator.html' %}
+{% endblock %} 

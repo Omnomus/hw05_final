@@ -1,0 +1,49 @@
+<!-- templates/about/author.html -->
+{% extends "base.html" %}
+{% block title %}Об авторе проекта{% endblock %}
+{% block content %}
+{% load static %}
+{% load user_filters %}
+  <main role="main" class="container">
+    <div class="row">
+      <!-- Левый вспомогательный блок -->
+      <div class="col-md-3 mb-3 mt-1">
+        <div class="card">
+          <div class="card-body">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item">
+                <div class="h3">
+                  Технологии
+                </div> 
+              </li>
+              <li class="list-group-item">
+                <div class="h6 text-muted">
+                  А что я умею
+                </div>
+              </li>
+            </ul>                                               
+          </div>                    
+        </div>                
+      </div>
+      <!-- Тело страницы -->
+      <div class="col-md-9">
+        <div class="card-body">                    
+          <div class="card-text">
+            <p align="justify">Здесь должен будет появиться внушительный список оконченных курсов и изученных инструментов разработчика.
+              А пока будет скромно вот так.<br>
+              <p><b>Образование (в том числе курсы и программы повышения квалификации):</b></p>
+              <ul> 
+                <li>"Разработка сайтов: верстка CSS и программирование на 
+              языке JavaScript", университет Синергия, курс повышения квалификации, 72 часа (дистанционно)</li>
+                <li>"Python-разработчик", школа Яндекс-Практикум (по настоящее время)</li>
+              </ul>
+              
+              <br><i># картинка, чтоб вы видели, что я могу работать в HTML #</i><br>
+              <img class="card-img-bottom" src="{% static 'images/jack.jpg' %}" width="50" alt="all about me">
+            </p>
+          </div>                    
+        </div>                
+      </div>            
+    </div>        
+  </main>
+{% endblock %}

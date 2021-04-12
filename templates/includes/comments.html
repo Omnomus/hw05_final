@@ -1,0 +1,44 @@
+<!-- Форма добавления комментария -->
+{% load user_filters %}
+
+{% if user.is_authenticated %}
+<div class="card my-4">
+
+    {% if form.errors %}
+    {% for field in form %}
+         {% for error in field.errors %} 
+              <div class="alert alert-danger">
+                  <strong>{{ error|escape }}</strong>
+             </div>
+         {% endfor %}
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" action="{% url 'add_comment' post.author.username post.id %}">
+        {% csrf_token %}
+        <h5 class="card-header">Добавить комментарий:</h5>
+        <div class="card-body">
+            <div class="form-group">
+                {{ form.text|addclass:"form-control" }}
+            </div>
+            <button type="submit" class="btn btn-primary">Отправить</button>
+        </div>
+    </form>
+</div>
+{% endif %}
+
+<!-- Комментарии -->
+{% for item in comments %}
+<div class="media card mb-4">
+    <div class="media-body card-body">
+        <h5 class="mt-0">
+            <a href="{% url 'profile' item.author.username %}"
+               name="comment_{{ item.id }}">
+                {{ item.author.username }}
+            </a>
+        </h5>
+        <p>{{ item.text | linebreaksbr }}</p>
+        <i><small class="text-muted">{{ item.created|date:"d M Y" }}</small></i>
+    </div>
+</div>
+{% endfor %}
