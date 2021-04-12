@@ -22,7 +22,6 @@ def server_error(request):
     return render(request, 'misc/500.html', status=500)
 
 
-@cache_page(20)
 def index(request):
     post_list = Post.objects.all()
     paginator = Paginator(post_list, settings.PAGINATION_PER_PAGE)
@@ -54,14 +53,16 @@ def new_post(request):
 
 
 def profile(request, username):
-    author = User.objects.get(username=username)
+    author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
     paginator = Paginator(post_list, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    following = Follow.objects.filter(
-        user=request.user,
-        author=author).exists()
+    following = False
+    if request.user.is_authenticated:
+        following = Follow.objects.filter(
+            user=request.user,
+            author=author).exists()
     return render(
         request,
         'posts/profile.html',
@@ -118,7 +119,7 @@ def post_edit(request, username, post_id):
 
 @login_required
 def follow_index(request):
-    follows = get_list_or_404(Follow, user=request.user)
+    follows = Follow.objects.filter(user=request.user)
     post_list = []
     for follow in follows:
         post_list += follow.author.posts.all()
@@ -135,8 +136,8 @@ def follow_index(request):
 def profile_follow(request, username):
     user = request.user
     author = User.objects.get(username=username)
-    follow = Follow(user=user, author=author)
-    follow.save()
+    if user != author:
+        Follow.objects.get_or_create(user=user, author=author)
     return redirect('profile', username=username)
 
 
