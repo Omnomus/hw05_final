@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.cache import caches
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from posts.models import Follow, Group, Post
@@ -15,12 +15,14 @@ from posts.tests import const
 
 User = get_user_model()
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostPagesTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        settings.MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
         cls.Group = Group.objects.create(
             title=const.GROUP_NAME,
             slug=const.SLUG,
@@ -74,10 +76,6 @@ class PostPagesTest(TestCase):
             kwargs={
                 'username': self.Post.author.username,
                 'post_id': self.Post.id})
-
-        self.my_cache = caches['default']
-        self.my_cache.clear()
-    #    self.my_cache.close()
 
     def tearDown(self):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
@@ -182,16 +180,16 @@ class PostPagesTest(TestCase):
         form_data = {
             'text': const.POST_TEXT2,
             'group': test_group.id}
-        self.authorized_client.post(
+        response1 = self.authorized_client.post(
             const.NEW_POST_URL,
             data=form_data,
             follow=True)
-        self.my_cache.clear()
+        post1_id = response1.context.get('page')[0].id
         response = self.guest_client.get(const.INDEX_URL)
         first_object = response.context.get('page')[0]
         self.assertEqual(
-            first_object.text,
-            const.POST_TEXT2,
+            first_object.id,
+            post1_id,
             'New post do not appear on Index page')
 
     def test_new_post_displayed_correctly_on_group(self):

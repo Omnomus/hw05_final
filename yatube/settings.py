@@ -13,7 +13,7 @@ ALLOWED_HOSTS = [
     'testserver',
 ]
 
-PAGINATION_PER_PAGE = 10
+PAGINATION_PER_PAGE = 7
 
 LOGIN_URL = '/auth/login/'
 
