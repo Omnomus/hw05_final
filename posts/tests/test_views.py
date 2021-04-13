@@ -5,7 +5,6 @@ import tempfile
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.cache import caches
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
@@ -79,6 +78,37 @@ class PostPagesTest(TestCase):
 
     def tearDown(self):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+    def new_post(self, user, list):
+        test_group = Group.objects.get(title=const.GROUP_NAME)
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': test_group.id,
+            'image': self.uploaded}
+        response = user.post(
+            const.NEW_POST_URL,
+            data=form_data,
+            follow=True)
+        return response.context.get(list)[0]
+
+    def test_new_post_displayed_correctly(self):
+        """New post with choosen group displayed correctly on pages."""
+        post = self.new_post(self.authorized_client, 'page')
+        tested_url = [
+            const.INDEX_URL,
+            const.GROUP_URL
+        ]
+        for url in tested_url:
+            with self.subTest(url=url):
+                response = self.guest_client.get(url)
+                first_object = response.context.get('page')[0]
+                self.assertIs(first_object == post, True)
+
+    def test_new_post_wrong_group(self):
+        """New post with choosen group not displayed on wrong Group page."""
+        post = self.new_post(self.authorized_client, 'page')
+        response = self.guest_client.get(const.GROUP2_URL)
+        self.assertNotIn(post, response.context['page'])
 
     def test_pages_uses_correct_templates(self):
         """URL uses correct template."""
@@ -174,54 +204,6 @@ class PostPagesTest(TestCase):
         self.assertEqual(
             response.context.get('post').image, 'posts/small.gif')
 
-    def test_new_post_displayed_correctly_on_index(self):
-        """New post with choosen group displayed correctly on Index page."""
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id}
-        response1 = self.authorized_client.post(
-            const.NEW_POST_URL,
-            data=form_data,
-            follow=True)
-        post1_id = response1.context.get('page')[0].id
-        response = self.guest_client.get(const.INDEX_URL)
-        first_object = response.context.get('page')[0]
-        self.assertEqual(
-            first_object.id,
-            post1_id,
-            'New post do not appear on Index page')
-
-    def test_new_post_displayed_correctly_on_group(self):
-        """New post with choosen group displayed correctly on Group page."""
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id}
-        self.authorized_client.post(
-            const.NEW_POST_URL,
-            data=form_data,
-            follow=True)
-        response = self.guest_client.get(const.GROUP_URL)
-        first_object = response.context.get('page')[0]
-        self.assertEqual(
-            first_object.text,
-            const.POST_TEXT2,
-            'New post do not appear on Group page')
-
-    def test_new_post_not_displayed_on_wrong_group(self):
-        """New post with choosen group not displayed on wrong Group page."""
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id}
-        self.authorized_client.post(
-            const.NEW_POST_URL,
-            data=form_data,
-            follow=True)
-        response = self.guest_client.get(const.GROUP2_URL)
-        self.assertFalse(response.context.get('page'))
-
     def test_paginator_provide_right_count(self):
         """Paginator provides right count of posts per page."""
         objs = (Post(text=const.POST_TEXT2 * i,
@@ -246,22 +228,11 @@ class PostPagesTest(TestCase):
         """New post appears on follower's subscription page and
         does not appear on not follower's subscription page."""
         self.authorized_client.get(const.FOLLOW_URL)
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id}
-        self.authorized_client2.post(
-            const.NEW_POST_URL,
-            data=form_data,
-            follow=True)
-        post = Post.objects.get(
-            author=self.author,
-            text=const.POST_TEXT2,
-            group=test_group)
+        new_post = self.new_post(self.authorized_client2, 'page')
         response = self.authorized_client.get(const.FOLLOW_INDEX_URL)
-        self.assertIn(post, response.context.get('page'))
+        self.assertIn(new_post, response.context.get('page'))
         response = self.authorized_client2.get(const.FOLLOW_INDEX_URL)
-        self.assertNotIn(post, response.context.get('page'))
+        self.assertNotIn(new_post, response.context.get('page'))
 
     def test_add_comment_auth(self):
         """Authorized client can leave a comment."""
