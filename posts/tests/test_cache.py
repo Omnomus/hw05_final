@@ -29,7 +29,7 @@ class PostsCacheTest(TestCase):
             group=self.group
         )
 
-    def test_cache_on_index_page(self):
+    def test_cache_index(self):
         """Cache works correctly on index page."""
         response = self.guest_client.get(const.INDEX_URL)
         data = {

@@ -69,6 +69,11 @@ class PostPagesTest(TestCase):
             kwargs={
                 'username': self.Post.author.username,
                 'post_id': self.Post.id})
+        self.ADD_COMMENT_URL = reverse(
+            'add_comment',
+            kwargs={
+                'username': self.Post.author.username,
+                'post_id': self.Post.id})
 
         self.my_cache = caches['default']
         self.my_cache.clear()
@@ -239,7 +244,7 @@ class PostPagesTest(TestCase):
         self.assertFalse(
             Follow.objects.filter(user=self.user, author=self.author).exists())
 
-    def test_new_post_appears_in_follower_index(self):
+    def test_new_post_follow(self):
         """New post appears on follower's subscription page and
         does not appear on not follower's subscription page."""
         self.authorized_client.get(const.FOLLOW_URL)
@@ -256,9 +261,17 @@ class PostPagesTest(TestCase):
             text=const.POST_TEXT2,
             group=test_group)
         response = self.authorized_client.get(const.FOLLOW_INDEX_URL)
-        self.assertIn(
-            post, response.context.get('page'))
+        self.assertIn(post, response.context.get('page'))
+        response = self.authorized_client2.get(const.FOLLOW_INDEX_URL)
+        self.assertNotIn(post, response.context.get('page'))
 
-    def test_add_comment_available_for_authorized_only(self):
-        """Only authorized clients can leave a comment."""
-        pass
+    def test_add_comment_auth(self):
+        """Authorized client can leave a comment."""
+        data = {
+            'text': const.COMMENT_TEXT
+        }
+        self.authorized_client.post(
+            self.ADD_COMMENT_URL, data=data, follow=True)
+        response = self.guest_client.get(self.POST_URL)
+        self.assertEqual(
+            response.context.get('comments')[0].text, const.COMMENT_TEXT)

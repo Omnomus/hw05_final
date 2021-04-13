@@ -1,6 +1,7 @@
 from django.urls import reverse
 
 AUTHOR_NAME = 'leo'
+COMMENT_TEXT = 'some comment here'
 DESCRIPTION = 'group_description'
 GROUP_NAME = 'title_group'
 GROUP_NAME2 = 'title_group2'
@@ -24,6 +25,8 @@ NOT_EXIST_URL = '/about/tech15667/'
 PROFILE_AUTHOR_URL = reverse('profile', kwargs={'username': AUTHOR_NAME})
 PROFILE_USER_URL = reverse('profile', kwargs={'username': USER_NAME})
 UNFOLLOW_URL = reverse('profile_unfollow', kwargs={'username': AUTHOR_NAME})
+
+REDIRECT_AUTH = '/auth/login/?next='
 
 # templates
 
