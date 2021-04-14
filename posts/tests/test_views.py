@@ -79,6 +79,20 @@ class PostPagesTest(TestCase):
     def tearDown(self):
         shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
 
+    def first_post(self, client, url):
+        response = client.get(url)
+        self.assertEqual(
+            response.context.get('page')[0].author, self.user)
+        self.assertEqual(
+            response.context.get('page')[0].pub_date, self.Post.pub_date)
+        self.assertEqual(
+            response.context.get('page')[0].text, const.POST_TEXT)
+        self.assertEqual(
+            response.context.get('page')[0].group, PostPagesTest.Group)
+        self.assertEqual(
+            response.context.get('page')[0].image, 'posts/small.gif')
+        return
+
     def new_post(self, user, list):
         test_group = Group.objects.get(title=const.GROUP_NAME)
         form_data = {
@@ -126,17 +140,7 @@ class PostPagesTest(TestCase):
 
     def test_index_page_uses_correct_context(self):
         """Template index.html formed with correct context."""
-        response = self.guest_client.get(const.INDEX_URL)
-        self.assertEqual(
-            response.context.get('page')[0].author, self.user)
-        self.assertEqual(
-            response.context.get('page')[0].pub_date, self.Post.pub_date)
-        self.assertEqual(
-            response.context.get('page')[0].text, const.POST_TEXT)
-        self.assertEqual(
-            response.context.get('page')[0].group, PostPagesTest.Group)
-        self.assertEqual(
-            response.context.get('page')[0].image, 'posts/small.gif')
+        self.first_post(self.guest_client, const.INDEX_URL)
 
     def test_group_page_uses_correct_context(self):
         """Template group.html formed with correct context."""
@@ -145,14 +149,7 @@ class PostPagesTest(TestCase):
             response.context.get('group').title, const.GROUP_NAME)
         self.assertEqual(
             response.context.get('group').description, const.DESCRIPTION)
-        self.assertEqual(
-            response.context.get('page')[0].author, self.user)
-        self.assertEqual(
-            response.context.get('page')[0].pub_date, self.Post.pub_date)
-        self.assertEqual(
-            response.context.get('page')[0].text, const.POST_TEXT)
-        self.assertEqual(
-            response.context.get('page')[0].image, 'posts/small.gif')
+        self.first_post(self.guest_client, const.GROUP_URL)
 
     def test_new_post_page_uses_correct_context(self):
         """Template new_post.html formed with correct context."""
@@ -186,14 +183,7 @@ class PostPagesTest(TestCase):
         response = self.authorized_client.get(const.PROFILE_USER_URL)
         self.assertEqual(
             response.context.get('author').username, const.USER_NAME)
-        self.assertEqual(
-            response.context.get('page')[0].author, self.user)
-        self.assertEqual(
-            response.context.get('page')[0].pub_date, self.Post.pub_date)
-        self.assertEqual(
-            response.context.get('page')[0].text, const.POST_TEXT)
-        self.assertEqual(
-            response.context.get('page')[0].image, 'posts/small.gif')
+        self.first_post(self.authorized_client, const.PROFILE_USER_URL)
 
     def test_post_page_uses_correct_context(self):
         """Template post.html formed with correct context."""

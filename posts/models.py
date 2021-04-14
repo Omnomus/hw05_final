@@ -6,13 +6,13 @@ User = get_user_model()
 
 class Group(models.Model):
     """Community for posts. Grouping by topic."""
-    title = models.CharField('Имя группы', max_length=200,
+    title = models.CharField('Имя группы',
+                             max_length=200,
                              help_text='Введите имя группы')
     slug = models.SlugField('Slug',
                             unique=True,
                             help_text='Придумайте короткое название (slug)')
     description = models.TextField('Описание группы',
-                                   max_length=1000,
                                    help_text='Напишите описание группы')
 
     class Meta:
@@ -30,7 +30,8 @@ class Post(models.Model):
     text = models.TextField('Текст заметки',
                             help_text='Введите текст')
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE,
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
                                related_name='posts')
     group = models.ForeignKey(Group,
                               on_delete=models.SET_NULL,
@@ -59,9 +60,11 @@ class Comment(models.Model):
                              on_delete=models.CASCADE,
                              related_name='comments',
                              verbose_name='Комментарий')
-    author = models.ForeignKey(User, on_delete=models.CASCADE,
+    author = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
                                related_name='comments')
-    created = models.DateTimeField('Дата публикации', auto_now_add=True)
+    created = models.DateTimeField('Дата публикации',
+                                   auto_now_add=True)
     text = models.TextField('Комментарий',
                             help_text='Оставьте свой комментарий')
 
@@ -91,3 +94,7 @@ class Follow(models.Model):
 
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        """String for representing Model Object."""
+        return f'subscribe: {self.user.username} for {self.author.username}'

@@ -11,7 +11,8 @@ class PostForm(forms.ModelForm):
         widgets = {'text':
                    forms.Textarea(attrs={'placeholder': 'Напишите здесь)'})}
         labels = {'group': 'Выберите группу для публикации',
-                  'text': 'Напишите заметку'}
+                  'text': 'Напишите заметку',
+                  'image': 'Вставьте картинку'}
 
 
 class CommentForm(forms.ModelForm):

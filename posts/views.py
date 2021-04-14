@@ -118,10 +118,8 @@ def post_edit(request, username, post_id):
 @login_required
 def follow_index(request):
     follows = Follow.objects.filter(user=request.user)
-    post_list = []
-    for follow in follows:
-        post_list += follow.author.posts.all()
-    post_list.sort(key=lambda post: post.pub_date, reverse=True)
+    followings = User.objects.filter(following__in=follows)
+    post_list = Post.objects.filter(author__in=followings)
     paginator = Paginator(
         post_list,
         settings.PAGINATION_PER_PAGE)
