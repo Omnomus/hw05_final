@@ -54,3 +54,12 @@ PICT2 = (
     b'\x00\x00\x00\x2C\x00\x00\x00\x00'
     b'\x02\x00\x01\x00\x00\x02\x02\x0C'
     b'\x0A\x00\x3B')
+
+# form-error text
+ERROR_TEXT = ("Формат файлов 'txt' не поддерживается. Поддерживаемые "
+              "форматы файлов: 'bmp, dib, gif, tif, tiff, jfif, jpe, jpg, "
+              'jpeg, pbm, pgm, ppm, pnm, png, apng, blp, bufr, cur, pcx, '
+              'dcx, dds, ps, eps, fit, fits, fli, flc, ftc, ftu, gbr, grib, '
+              'h5, hdf, jp2, j2k, jpc, jpf, jpx, j2c, icns, ico, im, iim, '
+              'mpg, mpeg, mpo, msp, palm, pcd, pdf, pxr, psd, bw, rgb, rgba, '
+              "sgi, ras, tga, icb, vda, vst, webp, wmf, emf, xbm, xpm'.")

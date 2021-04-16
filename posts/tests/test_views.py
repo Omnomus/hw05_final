@@ -35,7 +35,7 @@ class PostPagesTest(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
 
     def setUp(self):
@@ -49,6 +49,11 @@ class PostPagesTest(TestCase):
 
         self.uploaded = SimpleUploadedFile(
             name='small.gif',
+            content=const.PICT,
+            content_type='image/gif'
+        )
+        self.image = SimpleUploadedFile(
+            name='image.gif',
             content=const.PICT,
             content_type='image/gif'
         )
@@ -76,7 +81,7 @@ class PostPagesTest(TestCase):
                 'post_id': self.Post.id})
 
     def tearDown(self):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def first_post(self, client, url):
         response = client.get(url)
@@ -92,36 +97,40 @@ class PostPagesTest(TestCase):
             response.context.get('page')[0].image, 'posts/small.gif')
         return
 
-    def new_post(self, user):
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id,
-            'image': self.uploaded}
-        return user.post(
-            const.NEW_POST_URL, data=form_data, follow=True)
-
     def test_new_post_displayed_correctly(self):
         """New post with choosen group displayed correctly on pages."""
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': PostPagesTest.Group.id,
-            'image': self.uploaded}
-        self.authorized_client.post(
-            const.NEW_POST_URL, data=form_data, follow=True)
         tested_url = [
             const.INDEX_URL,
             const.GROUP_URL
         ]
+        posts_count = Post.objects.count()
+        test_group = Group.objects.get(title=const.GROUP_NAME)
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': test_group.id,
+            'image': self.image}
+        self.authorized_client.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
         for url in tested_url:
             with self.subTest(url=url):
                 response = self.guest_client.get(url)
                 first_post = response.context.get('page')[0]
                 self.assertEqual(first_post.text, const.POST_TEXT2)
+                self.assertEqual(first_post.group, self.Group)
+                self.assertEqual(first_post.image, 'posts/image.gif')
+                self.assertEqual(first_post.author.username, const.USER_NAME)
+                self.assertEqual(posts_count + 1, Post.objects.count())
 
     def test_new_post_wrong_group(self):
         """New post with choosen group not displayed on wrong Group page."""
-        post = self.new_post(self.authorized_client, 'page')
+        test_group = Group.objects.get(title=const.GROUP_NAME)
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': test_group.id,
+            'image': self.image}
+        self.authorized_client.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
+        post = Post.objects.filter(author=self.user).latest('pub_date')
         response = self.guest_client.get(const.GROUP2_URL)
         self.assertNotIn(post, response.context['page'])
 
@@ -219,7 +228,14 @@ class PostPagesTest(TestCase):
         """New post appears on follower's subscription page and
         does not appear on not follower's subscription page."""
         self.authorized_client.get(const.FOLLOW_URL)
-        new_post = self.new_post(self.authorized_client2, 'page')
+        test_group = Group.objects.get(title=const.GROUP_NAME)
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': test_group.id,
+            'image': self.image}
+        response = self.authorized_client2.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
+        new_post = Post.objects.filter(author=self.author).latest('pub_date')
         response = self.authorized_client.get(const.FOLLOW_INDEX_URL)
         self.assertIn(new_post, response.context.get('page'))
         response = self.authorized_client2.get(const.FOLLOW_INDEX_URL)

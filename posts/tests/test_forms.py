@@ -45,6 +45,16 @@ class PostsFormsTests(TestCase):
             author=self.user,
             group=self.Group
         )
+        self.image = SimpleUploadedFile(
+            name='small.gif',
+            content=const.PICT,
+            content_type='image/gif'
+        )
+        self.text = SimpleUploadedFile(
+            name='string.txt',
+            content=const.PICT,
+            content_type='text/plain'
+        )
         self.EDIT_POST_URL = reverse(
             'post_edit',
             kwargs={
@@ -57,49 +67,54 @@ class PostsFormsTests(TestCase):
     def test_new_post_appear_in_database(self):
         """New post appear in database."""
         posts_count = Post.objects.count()
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=const.PICT,
-            content_type='image/gif'
-        )
         form_data = {
             'text': const.POST_TEXT2,
             'group': self.Group.id,
-            'image': uploaded}
+            'image': self.image}
         response = self.authorized_client.post(
             const.NEW_POST_URL,
             data=form_data,
             follow=True)
-        redirect = const.INDEX_URL
-        response2 = self.guest_client.get(const.INDEX_URL)
-        self.assertTrue(Post.objects.filter(text=const.POST_TEXT2).exists())
-        self.assertEqual(
-            response2.context.get('page')[0].image, 'posts/small.gif')
+        post = Post.objects.filter(author=self.user).latest('pub_date')
+        self.assertEqual(post.group, self.Group)
+        self.assertEqual(post.text, const.POST_TEXT2)
+        self.assertEqual(post.image, 'posts/small.gif')
         self.assertEqual(Post.objects.count(), posts_count + 1)
-        self.assertRedirects(response, redirect)
+        self.assertRedirects(response, const.INDEX_URL)
 
     def test_edited_post_appear_in_database(self):
         """Post has been changed in database."""
         posts_count = Post.objects.count()
-        uploaded = SimpleUploadedFile(
-            name='small.gif',
-            content=const.PICT,
-            content_type='image/gif'
-        )
         form_data = {
             'text': const.POST_TEXT2,
             'group': self.Group2.id,
-            'image': uploaded}
+            'image': self.image}
         self.authorized_client.post(
             self.EDIT_POST_URL,
             data=form_data,
             follow=True)
-        self.assertTrue(Post.objects.filter(
-            id=self.Post.id,
-            text=const.POST_TEXT2,
-            image='posts/small.gif').exists())
+        post_edited = Post.objects.get(id=self.Post.id)
+        self.assertEqual(post_edited.group, self.Group2)
+        self.assertEqual(post_edited.text, const.POST_TEXT2)
+        self.assertEqual(post_edited.image, 'posts/small.gif')
         self.assertFalse(Post.objects.filter(text=const.POST_TEXT).exists())
         self.assertEqual(Post.objects.count(), posts_count)
+
+    def test_post_with_wrong_data(self):
+        """Post will not be saved with wrong-type data in image field."""
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': self.Group2.id,
+            'image': self.text}
+        response = self.authorized_client.post(
+            const.NEW_POST_URL,
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Post.objects.count(), posts_count)
+        self.assertFormError(
+            response, 'form', 'image', errors=const.ERROR_TEXT)
 
 
 class CommentFormTests(TestCase):
@@ -144,6 +159,7 @@ class CommentFormTests(TestCase):
             self.ADD_COMMENT_URL,
             data=data,
             follow=True)
+        comment = Comment.objects.filter(author=self.user).latest('created')
+        self.assertEqual(comment.text, const.COMMENT_TEXT)
         self.assertEqual(self.Post.comments.count(), count + 1)
-        self.assertEqual(self.Post.comments.all()[0].text, const.COMMENT_TEXT)
         self.assertRedirects(response, self.POST_URL)
