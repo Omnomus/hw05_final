@@ -18,10 +18,9 @@ TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostsFormsTests(TestCase):
-
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
         super().tearDownClass()
 
     def setUp(self):
@@ -62,7 +61,7 @@ class PostsFormsTests(TestCase):
                 'post_id': self.Post.id})
 
     def tearDown(self):
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_new_post_appear_in_database(self):
         """New post appear in database."""
@@ -117,7 +116,12 @@ class PostsFormsTests(TestCase):
             response, 'form', 'image', errors=const.ERROR_TEXT)
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class CommentFormTests(TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
+        super().tearDownClass()
 
     def setUp(self):
         self.author = User.objects.create_user(username=const.AUTHOR_NAME)
@@ -150,6 +154,9 @@ class CommentFormTests(TestCase):
             kwargs={
                 'username': self.Post.author.username,
                 'post_id': self.Post.id})
+
+    def tearDown(self):
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_new_comment(self):
         """New comment appears on post's page."""

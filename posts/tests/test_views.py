@@ -97,6 +97,20 @@ class PostPagesTest(TestCase):
             response.context.get('page')[0].image, 'posts/small.gif')
         return
 
+    def new_post(self):
+        test_group = Group.objects.get(title=const.GROUP_NAME)
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': test_group.id,
+            'image': self.image}
+        self.authorized_client2.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
+        post = Post.objects.filter(author=self.author).latest('pub_date')
+        self.assertEqual(post.text, const.POST_TEXT2)
+        self.assertEqual(post.group.title, const.GROUP_NAME)
+        self.assertEqual(post.image, 'posts/image.gif')
+        return post
+
     def test_new_post_displayed_correctly(self):
         """New post with choosen group displayed correctly on pages."""
         tested_url = [
@@ -104,35 +118,28 @@ class PostPagesTest(TestCase):
             const.GROUP_URL
         ]
         posts_count = Post.objects.count()
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id,
-            'image': self.image}
-        self.authorized_client.post(
-            const.NEW_POST_URL, data=form_data, follow=True)
+        new_post = self.new_post()
         for url in tested_url:
             with self.subTest(url=url):
                 response = self.guest_client.get(url)
-                first_post = response.context.get('page')[0]
-                self.assertEqual(first_post.text, const.POST_TEXT2)
-                self.assertEqual(first_post.group, self.Group)
-                self.assertEqual(first_post.image, 'posts/image.gif')
-                self.assertEqual(first_post.author.username, const.USER_NAME)
+                self.assertIn(new_post, response.context.get('page'))
                 self.assertEqual(posts_count + 1, Post.objects.count())
 
     def test_new_post_wrong_group(self):
         """New post with choosen group not displayed on wrong Group page."""
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id,
-            'image': self.image}
-        self.authorized_client.post(
-            const.NEW_POST_URL, data=form_data, follow=True)
-        post = Post.objects.filter(author=self.user).latest('pub_date')
+        new_post = self.new_post()
         response = self.guest_client.get(const.GROUP2_URL)
-        self.assertNotIn(post, response.context['page'])
+        self.assertNotIn(new_post, response.context['page'])
+
+    def test_new_post_follow(self):
+        """New post appears on follower's subscription page and
+        does not appear on not follower's subscription page."""
+        self.authorized_client.get(const.FOLLOW_URL)
+        new_post = self.new_post()
+        response = self.authorized_client.get(const.FOLLOW_INDEX_URL)
+        self.assertIn(new_post, response.context.get('page'))
+        response = self.authorized_client2.get(const.FOLLOW_INDEX_URL)
+        self.assertNotIn(new_post, response.context.get('page'))
 
     def test_pages_uses_correct_templates(self):
         """URL uses correct template."""
@@ -223,23 +230,6 @@ class PostPagesTest(TestCase):
         self.authorized_client.get(const.UNFOLLOW_URL)
         self.assertFalse(
             Follow.objects.filter(user=self.user, author=self.author).exists())
-
-    def test_new_post_follow(self):
-        """New post appears on follower's subscription page and
-        does not appear on not follower's subscription page."""
-        self.authorized_client.get(const.FOLLOW_URL)
-        test_group = Group.objects.get(title=const.GROUP_NAME)
-        form_data = {
-            'text': const.POST_TEXT2,
-            'group': test_group.id,
-            'image': self.image}
-        response = self.authorized_client2.post(
-            const.NEW_POST_URL, data=form_data, follow=True)
-        new_post = Post.objects.filter(author=self.author).latest('pub_date')
-        response = self.authorized_client.get(const.FOLLOW_INDEX_URL)
-        self.assertIn(new_post, response.context.get('page'))
-        response = self.authorized_client2.get(const.FOLLOW_INDEX_URL)
-        self.assertNotIn(new_post, response.context.get('page'))
 
     def test_add_comment_auth(self):
         """Authorized client can leave a comment."""
