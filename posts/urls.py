@@ -3,10 +3,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('404/',
-         views.page_not_found),
-    path('500/',
-         views.server_error),
     path('new/',
          views.new_post,
          name='new_post'),

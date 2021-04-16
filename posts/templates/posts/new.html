@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Последние обновления на сайте{% endblock %}
+{% block title %}{% if not post %}Новая запись{% else %}Редактировать запись{% endif %}{% endblock %}
+{% block header %}<h1>{% if not post %}Создайте пост :){% else %}Отредактируйте пост :){% endif %}</h1>{% endblock %}
 {% block content %}
 {# загружаем фильтр #}
 {% load user_filters %}
@@ -20,7 +21,7 @@
                    {% endfor %}
                 {% endif %}
 
-                <form method="post" enctype="multipart/form-data" action={% if not post %} "{% url 'new_post' %}" {% else %} "{% url 'post_edit' username=author.username post_id=post.id %}" {% endif %}>
+                <form method="post" enctype="multipart/form-data" action={% if not post %} "{% url 'new_post' %}" {% else %} "{% url 'post_edit' username=post.author.username post_id=post.id %}" {% endif %}>
                 {% csrf_token %}
 
                 {% for field in form %}

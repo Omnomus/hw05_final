@@ -52,7 +52,6 @@ class PostPagesTest(TestCase):
             content=const.PICT,
             content_type='image/gif'
         )
-
         self.Post = Post.objects.create(
             text=const.POST_TEXT,
             pub_date=dt.datetime.now(),
@@ -93,21 +92,23 @@ class PostPagesTest(TestCase):
             response.context.get('page')[0].image, 'posts/small.gif')
         return
 
-    def new_post(self, user, list):
+    def new_post(self, user):
         test_group = Group.objects.get(title=const.GROUP_NAME)
         form_data = {
             'text': const.POST_TEXT2,
             'group': test_group.id,
             'image': self.uploaded}
-        response = user.post(
-            const.NEW_POST_URL,
-            data=form_data,
-            follow=True)
-        return response.context.get(list)[0]
+        return user.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
 
     def test_new_post_displayed_correctly(self):
         """New post with choosen group displayed correctly on pages."""
-        post = self.new_post(self.authorized_client, 'page')
+        form_data = {
+            'text': const.POST_TEXT2,
+            'group': PostPagesTest.Group.id,
+            'image': self.uploaded}
+        self.authorized_client.post(
+            const.NEW_POST_URL, data=form_data, follow=True)
         tested_url = [
             const.INDEX_URL,
             const.GROUP_URL
@@ -115,8 +116,8 @@ class PostPagesTest(TestCase):
         for url in tested_url:
             with self.subTest(url=url):
                 response = self.guest_client.get(url)
-                first_object = response.context.get('page')[0]
-                self.assertIs(first_object == post, True)
+                first_post = response.context.get('page')[0]
+                self.assertEqual(first_post.text, const.POST_TEXT2)
 
     def test_new_post_wrong_group(self):
         """New post with choosen group not displayed on wrong Group page."""
@@ -175,7 +176,7 @@ class PostPagesTest(TestCase):
                 form_field = response.context.get('form').fields[value]
                 self.assertIsInstance(form_field, expected)
         self.assertEqual(
-            response.context.get('author').username, const.USER_NAME)
+            response.context.get('post').author.username, const.USER_NAME)
         self.assertEqual(response.context.get('post').text, const.POST_TEXT)
 
     def test_profile_page_uses_correct_context(self):

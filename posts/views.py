@@ -41,7 +41,7 @@ def group_posts(request, slug):
 
 @login_required
 def new_post(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, files=request.FILES or None)
     if form.is_valid():
         instance = form.save(commit=False)
         instance.author = request.user
@@ -83,14 +83,11 @@ def add_comment(request, username, post_id):
 def post_view(request, username, post_id):
     author = get_object_or_404(User, username=username)
     post = get_object_or_404(Post, pk=post_id, author=author)
-    comments = post.comments.all()
     form = CommentForm()
     return render(
         request,
         'posts/post.html',
-        {'author': author,
-         'post': post,
-         'comments': comments,
+        {'post': post,
          'form': form})
 
 
@@ -111,8 +108,7 @@ def post_edit(request, username, post_id):
     return render(
         request, 'posts/new.html',
         {'form': form,
-         'post': post_requested,
-         'author': author})
+         'post': post_requested})
 
 
 @login_required
@@ -121,8 +117,7 @@ def follow_index(request):
     followings = User.objects.filter(following__in=follows)
     post_list = Post.objects.filter(author__in=followings)
     paginator = Paginator(
-        post_list,
-        settings.PAGINATION_PER_PAGE)
+        post_list, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
     return render(request, 'follow.html', {'page': page})
