@@ -255,3 +255,12 @@ class PostPagesTest(TestCase):
             self.assertEqual(self.Post.image, 'posts/image.gif')
             self.assertEqual(post_edited.author, self.author)
             self.assertEqual(Post.objects.count(), posts_count)
+
+        def test_comment_uses_correct_context(self):
+            """Comment form with correct context."""
+            response = self.authorized_client.get(self.ADD_COMMENT_URL)
+            form_fields = {'text': forms.fields.CharField}
+            for value, expected in form_fields.items():
+                with self.subTest(value=value):
+                    form_field = response.context.get('form').fields[value]
+                    self.assertIsInstance(form_field, expected)
