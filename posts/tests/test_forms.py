@@ -1,4 +1,3 @@
-import datetime as dt
 import shutil
 import tempfile
 
@@ -38,16 +37,21 @@ class PostsFormsTests(TestCase):
             slug=const.SLUG2,
             description=const.DESCRIPTION
         )
-        self.Post = Post.objects.create(
-            text=const.POST_TEXT,
-            pub_date=dt.datetime.now(),
-            author=self.user,
-            group=self.Group
-        )
-        self.image = SimpleUploadedFile(
+        self.uploaded = SimpleUploadedFile(
             name='small.gif',
             content=const.PICT,
             content_type='image/gif'
+        )
+        self.image = SimpleUploadedFile(
+            name='image.gif',
+            content=const.PICT,
+            content_type='image/gif'
+        )
+        self.Post = Post.objects.create(
+            text=const.POST_TEXT,
+            author=self.user,
+            group=self.Group,
+            image=self.uploaded
         )
         self.text = SimpleUploadedFile(
             name='string.txt',
@@ -57,7 +61,7 @@ class PostsFormsTests(TestCase):
         self.EDIT_POST_URL = reverse(
             'post_edit',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.USER_NAME,
                 'post_id': self.Post.id})
 
     def tearDown(self):
@@ -77,7 +81,7 @@ class PostsFormsTests(TestCase):
         post = Post.objects.filter(author=self.user).latest('pub_date')
         self.assertEqual(post.group, self.Group)
         self.assertEqual(post.text, const.POST_TEXT2)
-        self.assertEqual(post.image, 'posts/small.gif')
+        self.assertEqual(post.image, 'posts/image.gif')
         self.assertEqual(Post.objects.count(), posts_count + 1)
         self.assertRedirects(response, const.INDEX_URL)
 
@@ -95,7 +99,7 @@ class PostsFormsTests(TestCase):
         post_edited = Post.objects.get(id=self.Post.id)
         self.assertEqual(post_edited.group, self.Group2)
         self.assertEqual(post_edited.text, const.POST_TEXT2)
-        self.assertEqual(post_edited.image, 'posts/small.gif')
+        self.assertEqual(post_edited.image, 'posts/image.gif')
         self.assertFalse(Post.objects.filter(text=const.POST_TEXT).exists())
         self.assertEqual(Post.objects.count(), posts_count)
 
@@ -133,7 +137,7 @@ class CommentFormTests(TestCase):
             slug=const.SLUG,
             description=const.DESCRIPTION
         )
-        uploaded = SimpleUploadedFile(
+        image = SimpleUploadedFile(
             name='small.gif',
             content=const.PICT,
             content_type='image/gif'
@@ -142,17 +146,17 @@ class CommentFormTests(TestCase):
             text=const.POST_TEXT,
             author=self.author,
             group=self.Group,
-            image=uploaded
+            image=image
         )
         self.POST_URL = reverse(
             'post',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.AUTHOR_NAME,
                 'post_id': self.Post.id})
         self.ADD_COMMENT_URL = reverse(
             'add_comment',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.AUTHOR_NAME,
                 'post_id': self.Post.id})
 
     def tearDown(self):

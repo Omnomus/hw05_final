@@ -59,7 +59,6 @@ class PostPagesTest(TestCase):
         )
         self.Post = Post.objects.create(
             text=const.POST_TEXT,
-            pub_date=dt.datetime.now(),
             author=self.user,
             group=PostPagesTest.Group,
             image=self.uploaded
@@ -67,17 +66,17 @@ class PostPagesTest(TestCase):
         self.POST_URL = reverse(
             'post',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.USER_NAME,
                 'post_id': self.Post.id})
         self.EDIT_POST_URL = reverse(
             'post_edit',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.USER_NAME,
                 'post_id': self.Post.id})
         self.ADD_COMMENT_URL = reverse(
             'add_comment',
             kwargs={
-                'username': self.Post.author.username,
+                'username': const.USER_NAME,
                 'post_id': self.Post.id})
 
     def tearDown(self):
@@ -241,3 +240,18 @@ class PostPagesTest(TestCase):
         response = self.guest_client.get(self.POST_URL)
         self.assertEqual(
             response.context.get('comments')[0].text, const.COMMENT_TEXT)
+
+        def test_post_edit(self):
+            """Edited post appear in database."""
+            posts_count = Post.objects.count()
+            form_data = {
+                'text': const.POST_TEXT2,
+                'image': self.image
+            }
+            self.authorized_client2.post(
+                self.EDIT_POST_URL, data=form_data, follow=True)
+            post_edited = Post.objects.get(id=self.Post.id)
+            self.assertEqual(self.Post.text, const.POST_TEXT2)
+            self.assertEqual(self.Post.image, 'posts/image.gif')
+            self.assertEqual(post_edited.author, self.author)
+            self.assertEqual(Post.objects.count(), posts_count)
