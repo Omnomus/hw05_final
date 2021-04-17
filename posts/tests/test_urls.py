@@ -79,8 +79,6 @@ class PostsURLTests(TestCase):
             [guest, const.GROUP_URL],
             [guest, const.PROFILE_AUTHOR_URL],
             [guest, self.POST_URL],
-            [guest, const.ABOUT_URL],
-            [guest, const.ABOUT_TECH_URL],
             [user, const.NEW_POST_URL],
         ]
         for client, url in tested_urls:
