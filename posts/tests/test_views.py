@@ -241,26 +241,16 @@ class PostPagesTest(TestCase):
         self.assertEqual(
             response.context.get('comments')[0].text, const.COMMENT_TEXT)
 
-        def test_post_edit(self):
-            """Edited post appear in database."""
-            posts_count = Post.objects.count()
-            form_data = {
-                'text': const.POST_TEXT2,
-                'image': self.image
-            }
-            self.authorized_client2.post(
-                self.EDIT_POST_URL, data=form_data, follow=True)
-            post_edited = Post.objects.get(id=self.Post.id)
-            self.assertEqual(self.Post.text, const.POST_TEXT2)
-            self.assertEqual(self.Post.image, 'posts/image.gif')
-            self.assertEqual(post_edited.author, self.author)
-            self.assertEqual(Post.objects.count(), posts_count)
-
-        def test_comment_uses_correct_context(self):
-            """Comment form with correct context."""
-            response = self.authorized_client.get(self.ADD_COMMENT_URL)
-            form_fields = {'text': forms.fields.CharField}
-            for value, expected in form_fields.items():
-                with self.subTest(value=value):
-                    form_field = response.context.get('form').fields[value]
-                    self.assertIsInstance(form_field, expected)
+    def test_post_edit(self):
+        """Edited post appear in database."""
+        posts_count = Post.objects.count()
+        form_data = {
+            'text': const.POST_TEXT2,
+            'image': self.image}
+        self.authorized_client.post(
+            self.EDIT_POST_URL, data=form_data, follow=True)
+        post_edited = Post.objects.get(id=self.Post.id)
+        self.assertEqual(post_edited.text, const.POST_TEXT2)
+        self.assertEqual(post_edited.image, 'posts/image.gif')
+        self.assertEqual(post_edited.author, self.user)
+        self.assertEqual(Post.objects.count(), posts_count)
