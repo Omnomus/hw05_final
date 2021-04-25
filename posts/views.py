@@ -56,11 +56,13 @@ def profile(request, username):
     paginator = Paginator(post_list, settings.PAGINATION_PER_PAGE)
     page_number = request.GET.get('page')
     page = paginator.get_page(page_number)
-    following = False
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(
-            user=request.user,
-            author=author).exists()
+    # following = False
+    # if request.user.is_authenticated:
+    #    following = Follow.objects.filter(
+    #        user=request.user,
+    #        author=author).exists()
+    following = (request.user.is_authenticated and Follow.objects.filter(
+        user=request.user, author__username=username).exists())
     return render(
         request,
         'posts/profile.html',
@@ -83,12 +85,15 @@ def add_comment(request, username, post_id):
 def post_view(request, username, post_id):
     author = get_object_or_404(User, username=username)
     post = get_object_or_404(Post, pk=post_id, author=author)
+    following = (request.user.is_authenticated and Follow.objects.filter(
+        user=request.user, author__username=username).exists())
     form = CommentForm()
     return render(
         request,
         'posts/post.html',
         {'post': post,
-         'form': form})
+         'form': form,
+         'following': following})
 
 
 @login_required
